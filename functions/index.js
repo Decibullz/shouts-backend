@@ -18,8 +18,61 @@ const firebase = require("firebase");
 firebase.initializeApp(firebaseConfig);
 
 const db = admin.firestore();
+const FBAuth = (req, res, next) => {
+  let idToken;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    idToken = req.headers.authorization.split("Bearer ")[1];
+  } else {
+    console.error("No token found");
+    return res.status(403), json({ error: "Unauthorized" });
+  }
+  admin
+    .auth()
+    .verifyIdToken(idToken)
+    .then((decodedToken) => {
+      req.user = decodedToken;
+      console.log(decodedToken);
+      return db
+        .collection("users")
+        .where("userId", "==", req.user.uid)
+        .limit(1)
+        .get();
+    })
+    .then((data) => {
+      req.user.handle = data.docs[0].data().handle;
+      return next();
+    })
+    .catch((err) => {
+      console.error("Error while verifying token", err);
+      return res.status(403).json(err);
+    });
+};
 
-app.get("/shouts", (req, res) => {
+app.post("/shout", FBAuth, (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(400).json({ error: "Method Not Allowed" });
+  }
+  const newShout = {
+    body: req.body.body,
+    userHandle: req.user.handle,
+    createdAt: new Date().toISOString(),
+  };
+
+  db.collection("shouts")
+    .add(newShout)
+    .then((doc) => {
+      res.json({ message: `document ${doc.id} created successfully ` });
+    })
+    .catch((err) => {
+      res.status(500).json({ error: `somthing went wrong` });
+      console.error(err);
+    });
+});
+
+app.get("/shouts", FBAuth, (req, res) => {
   db.collection("shouts")
     .orderBy("createdAt", "desc")
     .get()
@@ -34,27 +87,6 @@ app.get("/shouts", (req, res) => {
       return res.json(shouts);
     })
     .catch((error) => console.error(error));
-});
-
-app.post("/shout", (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(400).json({ error: "Method Not Allowed" });
-  }
-  const newShout = {
-    body: req.body.body,
-    userHandle: req.body.userHandle,
-    createdAt: new Date().toISOString(),
-  };
-
-  db.collection("shouts")
-    .add(newShout)
-    .then((doc) => {
-      res.json({ message: `document ${doc.id} created successfully ` });
-    })
-    .catch((err) => {
-      res.status(500).json({ error: `somthing went wrong` });
-      console.error(err);
-    });
 });
 
 const isEmpty = (string) => {
