@@ -1,6 +1,11 @@
 const functions = require("firebase-functions");
 const app = require("express")();
-const { getAllShouts, postOneScream } = require("./handlers/shouts");
+const {
+  getAllShouts,
+  postOneShout,
+  getShout,
+  commentOnShout,
+} = require("./handlers/shouts");
 const {
   signup,
   login,
@@ -13,8 +18,13 @@ const firebase = require("firebase");
 const FBAuth = require("./util/FBAuth");
 
 // Shout routes
-app.post("/shout", FBAuth, postOneScream);
+app.post("/shout", FBAuth, postOneShout);
 app.get("/shouts", getAllShouts);
+app.get("/shout/:shoutId", getShout);
+// TODO delete shout
+// TODO like shout
+// TODO unlike shout
+app.post("/shout/:shoutId/comment", FBAuth, commentOnShout);
 
 // user route
 app.post("/signup", signup);
