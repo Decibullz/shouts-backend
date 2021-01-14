@@ -17,6 +17,8 @@ const {
   uploadImage,
   addUserDetails,
   getAuthenticatedUser,
+  getUserDetails,
+  markNotificationsRead,
 } = require("./handlers/users");
 
 // Shout routes
@@ -26,7 +28,6 @@ app.get("/shout/:shoutId", getShout);
 app.delete("/shout/:shoutId", FBAuth, deleteShout);
 app.get("/shout/:shoutId/like", FBAuth, likeShout);
 app.get("/shout/:shoutId/unlike", FBAuth, unlikeShout);
-// TODO unlike shout
 app.post("/shout/:shoutId/comment", FBAuth, commentOnShout);
 
 // user route
@@ -35,6 +36,8 @@ app.post("/login", login);
 app.post("/user/image", FBAuth, uploadImage);
 app.post("/user", FBAuth, addUserDetails);
 app.get("/user", FBAuth, getAuthenticatedUser);
+app.get("/user/:handle", getUserDetails);
+app.post("/notifications", FBAuth, markNotificationsRead);
 
 exports.api = functions.https.onRequest(app);
 
