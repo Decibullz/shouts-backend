@@ -8,6 +8,7 @@ const {
   commentOnShout,
   likeShout,
   unlikeShout,
+  deleteShout,
 } = require("./handlers/shouts");
 const {
   signup,
@@ -21,7 +22,7 @@ const {
 app.post("/shout", FBAuth, postOneShout);
 app.get("/shouts", getAllShouts);
 app.get("/shout/:shoutId", getShout);
-// TODO delete shout
+app.delete("/shout/:shoutId", FBAuth, deleteShout);
 app.get("/shout/:shoutId/like", FBAuth, likeShout);
 app.get("/shout/:shoutId/unlike", FBAuth, unlikeShout);
 // TODO unlike shout

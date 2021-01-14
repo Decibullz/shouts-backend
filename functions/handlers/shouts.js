@@ -198,3 +198,26 @@ exports.unlikeShout = (req, res) => {
       res.status(500).json({ error: err.code });
     });
 };
+
+exports.deleteShout = (req, res) => {
+  const document = db.doc(`/shouts/${req.params.shoutId}`);
+  document
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Shout not found" });
+      }
+      if (doc.data().userHandle !== req.user.handle) {
+        return res.status(403).json({ error: "Not Authorized" });
+      } else {
+        return document.delete();
+      }
+    })
+    .then(() => {
+      res.json({ message: "Shout deleleted successfully" });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ error: err.code });
+    });
+};
