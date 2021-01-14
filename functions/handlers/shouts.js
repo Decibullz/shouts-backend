@@ -29,6 +29,7 @@ exports.postOneShout = (req, res) => {
     body: req.body.body,
     userHandle: req.user.handle,
     userImage: req.user.imageUrl,
+    createdAt: new Date().toISOString(),
     likeCount: 0,
     commentCount: 0,
   };
