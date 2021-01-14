@@ -28,16 +28,20 @@ exports.postOneShout = (req, res) => {
   const newShout = {
     body: req.body.body,
     userHandle: req.user.handle,
-    createdAt: new Date().toISOString(),
+    userImage: req.user.imageUrl,
+    likeCount: 0,
+    commentCount: 0,
   };
 
   db.collection("shouts")
     .add(newShout)
     .then((doc) => {
-      res.json({ message: `document ${doc.id} created successfully ` });
+      const resShout = newShout;
+      resShout.shoutId = doc.id;
+      res.json(resShout);
     })
     .catch((err) => {
-      res.status(500).json({ error: `somthing went wrong` });
+      res.status(500).json({ error: `Something went wrong` });
       console.error(err);
     });
 };
@@ -90,6 +94,9 @@ exports.commentOnShout = (req, res) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "shout not found" });
       }
+      return doc.ref.update({ commentCount: doc.data().commentCount + 1 });
+    })
+    .then(() => {
       return db.collection("comments").add(newComment);
     })
     .then(() => {
@@ -98,5 +105,96 @@ exports.commentOnShout = (req, res) => {
     .catch((err) => {
       console.error(err);
       res.status(500).json({ error: "Something went wrong" });
+    });
+};
+
+exports.likeShout = (req, res) => {
+  const likeDocument = db
+    .collection("likes")
+    .where("userHandle", "==", req.user.handle)
+    .where("shoutId", "==", req.params.shoutId)
+    .limit(1);
+
+  const shoutDocument = db.doc(`/shouts/${req.params.shoutId}`);
+
+  let shoutData;
+
+  shoutDocument
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        shoutData = doc.data();
+        shoutData.shoutId = doc.id;
+        return likeDocument.get();
+      } else {
+        return res.status(404).json({ error: "Shout not found" });
+      }
+    })
+    .then((data) => {
+      if (data.empty) {
+        return db
+          .collection("likes")
+          .add({
+            shoutId: req.params.shoutId,
+            userHandle: req.user.handle,
+          })
+          .then(() => {
+            shoutData.likeCount++;
+            return shoutDocument.update({ likeCount: shoutData.likeCount });
+          })
+          .then(() => {
+            return res.json(shoutData);
+          });
+      } else {
+        return res.status(400).json({ error: "Shout already liked" });
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ error: err.code });
+    });
+};
+
+exports.unlikeShout = (req, res) => {
+  const likeDocument = db
+    .collection("likes")
+    .where("userHandle", "==", req.user.handle)
+    .where("shoutId", "==", req.params.shoutId)
+    .limit(1);
+
+  const shoutDocument = db.doc(`/shouts/${req.params.shoutId}`);
+
+  let shoutData;
+
+  shoutDocument
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        shoutData = doc.data();
+        shoutData.shoutId = doc.id;
+        return likeDocument.get();
+      } else {
+        return res.status(404).json({ error: "Shout not found" });
+      }
+    })
+    .then((data) => {
+      if (data.empty) {
+        return res.status(400).json({ error: "Shout not liked" });
+      } else {
+        return db
+          .doc(`/likes/${data.docs[0].id}`)
+          .delete()
+          .then(() => {
+            shoutData.likeCount--;
+            return shoutDocument.update({ likeCount: shoutData.likeCount });
+          })
+          .then(() => {
+            res.json(shoutData);
+          });
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ error: err.code });
     });
 };
