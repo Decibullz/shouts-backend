@@ -99,11 +99,15 @@ exports.uploadImage = (req, res) => {
   let imageToBeUploaded = {};
 
   busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-    console.log(fieldname);
-    console.log(filename);
-    console.log(mimetype);
+    if (mimetype !== "image/jpeg" && mimetype !== "image/png") {
+      return res
+        .status(400)
+        .json({ error: "File type has to be either .jpeg or .png" });
+    }
     const imageExtension = filename.split(".")[filename.split(".").length - 1];
-    imageFileName = `${Math.round(Math.random() * 10000000)}.${imageExtension}`;
+    imageFileName = `${Math.round(
+      Math.random() * 1000000000
+    )}.${imageExtension}`;
     const filepath = path.join(os.tmpdir(), imageFileName);
     imageToBeUploaded = { filepath, mimetype };
     file.pipe(fs.createWriteStream(filepath));
