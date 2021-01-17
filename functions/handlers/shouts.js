@@ -21,8 +21,8 @@ exports.getAllShouts = (req, res) => {
 };
 
 exports.postOneShout = (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(400).json({ error: "Method Not Allowed" });
+  if (req.body.body.trim() === "") {
+    return res.status(400).json({ body: "Body must not be empty" });
   }
 
   const newShout = {
